@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  body {
+    @apply bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0b] dark:text-zinc-100 transition-colors duration-150;
+  }
+}

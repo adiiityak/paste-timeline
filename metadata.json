@@ -1,0 +1,6 @@
+{
+  "name": "PasteTimeline",
+  "description": "Local-first clipboard history application with smart type detection, full-text search, OCR, tags, collections, and privacy controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
