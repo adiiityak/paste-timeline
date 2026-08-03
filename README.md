@@ -1,8 +1,8 @@
 # PasteTimeline — macOS & Web Clipboard History Manager
 
-![PasteTimeline macOS Dashboard Preview](https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80)
+![PasteTimeline macOS Dashboard Preview](./public/dashboard-preview.png)
 
-**PasteTimeline** is a local-first, privacy-focused macOS and Web clipboard manager. It captures, organizes, and searches your clipboard history with smart content type detection, OCR image text extraction, custom folder collections, sensitive credential masking, and hotkey support (`Cmd+Shift+V`).
+> **PasteTimeline** is a local-first, privacy-focused macOS and Web clipboard manager. It captures, organizes, and searches your clipboard history with smart content type detection, OCR image text extraction, custom folder collections, sensitive credential masking, and hotkey support (`Cmd+Shift+V`).
 
 ---
 
