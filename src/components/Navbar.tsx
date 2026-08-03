@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   Command,
   Apple,
+  Upload,
 } from "lucide-react";
 import { useClipboardStore } from "../stores/clipboardStore";
 
@@ -28,7 +29,24 @@ export const Navbar: React.FC = () => {
     settings,
     updateSettings,
     items,
+    addClipboardItem,
+    showToast,
   } = useClipboardStore();
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        if (base64) {
+          addClipboardItem(base64, file.name || "Uploaded Image", "image");
+          showToast(`Added image "${file.name}" to clipboard history!`);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleThemeToggle = () => {
     const nextTheme = settings.theme === "dark" ? "light" : "dark";
@@ -83,6 +101,21 @@ export const Navbar: React.FC = () => {
 
       {/* Quick Action Controls */}
       <div className="flex items-center gap-2">
+        {/* Add Local Image File Button */}
+        <label
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white cursor-pointer transition-all shadow-sm"
+          title="Upload image file from folder"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Add Image</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+        </label>
+
         {/* macOS Desktop App Launcher */}
         <button
           onClick={() => setIsMacModalOpen(true)}

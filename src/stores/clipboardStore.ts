@@ -53,6 +53,7 @@ interface ClipboardState {
   updateItemTags: (id: string, tags: string[]) => Promise<void>;
   updateItemCollection: (id: string, collectionId: string | null) => Promise<void>;
   updateItemOcrText: (id: string, ocrText: string) => Promise<void>;
+  updateItemContent: (id: string, newContent: string, newType?: ClipboardType) => Promise<void>;
   updateItemAiAnalysis: (id: string, aiData: { summary?: string; autoTitle?: string; actionItems?: string[]; suggestedTags?: string[] }) => Promise<void>;
   copyItemToClipboard: (item: ClipboardItem) => Promise<void>;
   clearAllHistory: () => Promise<void>;
@@ -279,6 +280,26 @@ export const useClipboardStore = create<ClipboardState>((set, get) => ({
     const target = updated.find((i) => i.id === id);
     if (target) await saveClipboardItem(target);
     set({ items: updated });
+  },
+
+  updateItemContent: async (id: string, newContent: string, newType?: ClipboardType) => {
+    const { items, showToast } = get();
+    const updated = items.map((item) => {
+      if (item.id === id) {
+        const type = newType || (newContent.startsWith("data:image/") ? "image" : item.type);
+        return {
+          ...item,
+          content: newContent,
+          type,
+          tags: Array.from(new Set([...item.tags, type])),
+        };
+      }
+      return item;
+    });
+    const target = updated.find((i) => i.id === id);
+    if (target) await saveClipboardItem(target);
+    set({ items: updated });
+    showToast("Clip updated with image data!");
   },
 
   updateItemAiAnalysis: async (id, aiData) => {

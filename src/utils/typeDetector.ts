@@ -17,17 +17,33 @@ export function detectClipboardType(content: string): DetectionResult {
     charCount,
   };
 
-  // 1. Check for Image Data URL or Image File Path/URL
-  const isImageExtension = /\.(png|jpg|jpeg|gif|webp|svg|bmp|ico)$/i.test(trimmed.split("?")[0]);
-  if (
+  // 1. Check for Image Data URL or Direct Web Image URL
+  const isDirectImageSrc =
     content.startsWith("data:image/") ||
-    isImageExtension
-  ) {
+    content.startsWith("blob:") ||
+    (/^https?:\/\/.*\.(png|jpg|jpeg|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(trimmed));
+
+  if (isDirectImageSrc) {
     return {
       type: "image",
       metadata: {
         ...baseMetadata,
         imageSizeFormatted: formatBytes(Math.round(content.length * 0.75)),
+      },
+    };
+  }
+
+  // 1b. Check for File Path or File Name ending with an image or file extension
+  const isImageExtension = /\.(png|jpg|jpeg|gif|webp|svg|bmp|ico)$/i.test(trimmed.split("?")[0]);
+  const isFilePath =
+    isImageExtension ||
+    /^(file:\/\/\/|[a-zA-Z]:\\|\/|\.\/)/.test(trimmed);
+
+  if (isFilePath) {
+    return {
+      type: "filepath",
+      metadata: {
+        ...baseMetadata,
       },
     };
   }

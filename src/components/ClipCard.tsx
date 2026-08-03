@@ -20,6 +20,7 @@ import {
   Eye,
   EyeOff,
   Folder,
+  Upload,
 } from "lucide-react";
 import { ClipboardItem, ClipboardType } from "../types/clipboard";
 import { useClipboardStore } from "../stores/clipboardStore";
@@ -39,6 +40,7 @@ export const ClipCard: React.FC<ClipCardProps> = ({ item, isSelected, onSelectTo
     deleteItem,
     setSelectedItem,
     updateItemOcrText,
+    updateItemContent,
     collections,
   } = useClipboardStore();
 
@@ -46,6 +48,22 @@ export const ClipCard: React.FC<ClipCardProps> = ({ item, isSelected, onSelectTo
   const [isMaskRevealed, setIsMaskRevealed] = useState(false);
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
   const [ocrStatus, setOcrStatus] = useState<string>("");
+  const [imgError, setImgError] = useState(false);
+
+  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        if (base64) {
+          updateItemContent(item.id, base64, "image");
+          setImgError(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -256,13 +274,38 @@ export const ClipCard: React.FC<ClipCardProps> = ({ item, isSelected, onSelectTo
           </div>
         ) : item.type === "image" ? (
           <div className="space-y-2">
-            <div className="relative max-h-48 overflow-hidden rounded bg-zinc-100 dark:bg-[#0a0a0b] border border-zinc-200 dark:border-zinc-800 flex items-center justify-center p-2">
-              <img
-                src={item.content}
-                alt="Clipboard snapshot"
-                className="max-h-44 object-contain rounded"
-              />
-            </div>
+            {!imgError && (item.content.startsWith("data:image/") || item.content.startsWith("http") || item.content.startsWith("blob:")) ? (
+              <div className="relative max-h-48 overflow-hidden rounded bg-zinc-100 dark:bg-[#0a0a0b] border border-zinc-200 dark:border-zinc-800 flex items-center justify-center p-2">
+                <img
+                  src={item.content}
+                  alt="Clipboard snapshot"
+                  onError={() => setImgError(true)}
+                  className="max-h-44 object-contain rounded"
+                />
+              </div>
+            ) : (
+              <div className="bg-zinc-100 dark:bg-[#0a0a0b] p-3 rounded border border-zinc-200 dark:border-zinc-800 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-purple-600 dark:text-purple-400">
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Image File Reference</span>
+                </div>
+                <p className="font-mono text-xs text-zinc-700 dark:text-zinc-300 break-all bg-white dark:bg-zinc-900 p-2 rounded border border-zinc-200 dark:border-zinc-800">
+                  {item.content}
+                </p>
+                <div className="pt-1">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded cursor-pointer transition-all shadow-sm">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Select Image File from Folder</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileAttach}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
             {/* OCR Extracted Text Preview */}
             {item.ocr_text ? (
               <div className="bg-purple-50 dark:bg-[#0a0a0b] p-2.5 rounded border border-purple-200 dark:border-purple-500/30 text-xs font-mono text-purple-900 dark:text-purple-200 space-y-1">
@@ -275,14 +318,41 @@ export const ClipCard: React.FC<ClipCardProps> = ({ item, isSelected, onSelectTo
                 <p className="line-clamp-2">{item.ocr_text}</p>
               </div>
             ) : (
-              <button
-                onClick={handleRunOcr}
-                disabled={isOcrProcessing}
-                className="w-full py-1.5 px-3 rounded bg-purple-100 dark:bg-purple-600/20 hover:bg-purple-200 dark:hover:bg-purple-600/30 border border-purple-300 dark:border-purple-500/30 text-purple-800 dark:text-purple-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
-              >
-                <ScanText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span>{isOcrProcessing ? ocrStatus || "Extracting Text..." : "Extract Text with OCR"}</span>
-              </button>
+              item.content.startsWith("data:image/") && (
+                <button
+                  onClick={handleRunOcr}
+                  disabled={isOcrProcessing}
+                  className="w-full py-1.5 px-3 rounded bg-purple-100 dark:bg-purple-600/20 hover:bg-purple-200 dark:hover:bg-purple-600/30 border border-purple-300 dark:border-purple-500/30 text-purple-800 dark:text-purple-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <ScanText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>{isOcrProcessing ? ocrStatus || "Extracting Text..." : "Extract Text with OCR"}</span>
+                </button>
+              )
+            )}
+          </div>
+        ) : item.type === "filepath" ? (
+          <div className="bg-zinc-100 dark:bg-[#0a0a0b] p-3 rounded border border-zinc-200 dark:border-zinc-800 space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span className="flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-slate-500" /> File Path
+              </span>
+            </div>
+            <p className="font-mono text-xs text-zinc-800 dark:text-zinc-200 break-all bg-white dark:bg-zinc-900 p-2 rounded border border-zinc-200 dark:border-zinc-800">
+              {displayContent}
+            </p>
+            {/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(item.content) && (
+              <div className="pt-1">
+                <label className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded cursor-pointer transition-all shadow-sm">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Attach Image File to View Preview</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileAttach}
+                  />
+                </label>
+              </div>
             )}
           </div>
         ) : item.type === "url" ? (
