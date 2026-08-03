@@ -39,6 +39,63 @@ export const ScreenSnipperModal: React.FC<ScreenSnipperModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Listen for paste event inside modal to instantly load pasted image
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleModalPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.startsWith("image/")) {
+            const blob = items[i].getAsFile();
+            if (blob) {
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                const base64 = event.target?.result as string;
+                if (base64) {
+                  setCapturedImage(base64);
+                  showToast("Loaded clipboard screenshot for snipping!");
+                }
+              };
+              reader.readAsDataURL(blob);
+              break;
+            }
+          }
+        }
+      }
+    };
+    window.addEventListener("paste", handleModalPaste);
+    return () => window.removeEventListener("paste", handleModalPaste);
+  }, [isOpen, showToast]);
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          for (const type of item.types) {
+            if (type.startsWith("image/")) {
+              const blob = await item.getType(type);
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                const base64 = event.target?.result as string;
+                if (base64) {
+                  setCapturedImage(base64);
+                  showToast("Loaded clipboard screenshot for snipping!");
+                }
+              };
+              reader.readAsDataURL(blob);
+              return;
+            }
+          }
+        }
+      }
+      showToast("No image found on clipboard. Take a screenshot (Cmd+Shift+4 / Win+Shift+S) first!");
+    } catch {
+      showToast("Press Cmd+V / Ctrl+V to paste your screenshot!");
+    }
+  };
+
   // 1. Capture screen using Screen Capture API (navigator.mediaDevices.getDisplayMedia)
   const handleStartScreenCapture = async () => {
     setIsCapturingScreen(true);
@@ -69,9 +126,10 @@ export const ScreenSnipperModal: React.FC<ScreenSnipperModalProps> = ({
           showToast("Screen captured! Drag a box to snip or click 'Save Full Image'.");
         }
       }, 500);
-    } catch (err) {
+    } catch (err: any) {
       setIsCapturingScreen(false);
       console.warn("Screen capture cancelled or not allowed:", err);
+      showToast("Display capture permission denied. Take screenshot (Cmd+Shift+4) & press Cmd+V!");
     }
   };
 
@@ -190,6 +248,15 @@ export const ScreenSnipperModal: React.FC<ScreenSnipperModalProps> = ({
             >
               <Camera className="w-4 h-4" />
               <span>{isCapturingScreen ? "Capturing Screen..." : "Capture Screen / Window"}</span>
+            </button>
+
+            <button
+              onClick={handlePasteFromClipboard}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg shadow transition-all"
+              title="Paste screenshot from system clipboard (Cmd+V)"
+            >
+              <Zap className="w-4 h-4" />
+              <span>Paste Screenshot (Cmd+V)</span>
             </button>
           </div>
 

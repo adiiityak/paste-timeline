@@ -17,8 +17,12 @@ export function detectClipboardType(content: string): DetectionResult {
     charCount,
   };
 
-  // 1. Check for Image Data URL
-  if (content.startsWith("data:image/") || /^https?:\/\/.*\.(png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i.test(trimmed)) {
+  // 1. Check for Image Data URL or Image File Path/URL
+  const isImageExtension = /\.(png|jpg|jpeg|gif|webp|svg|bmp|ico)$/i.test(trimmed.split("?")[0]);
+  if (
+    content.startsWith("data:image/") ||
+    isImageExtension
+  ) {
     return {
       type: "image",
       metadata: {

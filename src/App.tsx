@@ -199,13 +199,17 @@ export default function App() {
     // 2. Comprehensive Clipboard Checker for Text & OS Screenshots
     const checkClipboardForItems = async () => {
       if (!isMonitoring || !document.hasFocus()) return;
-      try {
-        // Try reading rich clipboard items (images / screenshots)
-        if (navigator.clipboard && navigator.clipboard.read) {
+
+      let imageHandled = false;
+
+      // 1. Try reading binary images / OS screenshots from clipboard
+      if (navigator.clipboard && navigator.clipboard.read) {
+        try {
           const items = await navigator.clipboard.read();
           for (const item of items) {
             for (const type of item.types) {
               if (type.startsWith("image/")) {
+                imageHandled = true;
                 const blob = await item.getType(type);
                 const reader = new FileReader();
                 reader.onload = (event) => {
@@ -215,20 +219,26 @@ export default function App() {
                   }
                 };
                 reader.readAsDataURL(blob);
-                return; // Priority handled image
+                break;
               }
             }
+            if (imageHandled) break;
           }
+        } catch {
+          // Permission denied for raw clipboard binary read - expected in unprompted polling
         }
-        // Check text clipboard
-        if (navigator.clipboard && navigator.clipboard.readText) {
+      }
+
+      // 2. Check text clipboard if no binary image was processed
+      if (!imageHandled && navigator.clipboard && navigator.clipboard.readText) {
+        try {
           const text = await navigator.clipboard.readText();
           if (text && text.trim()) {
             addClipboardItem(text, "System Clipboard");
           }
+        } catch {
+          // Permission denied or window lost focus
         }
-      } catch {
-        // Ignore permission denied or empty clipboard
       }
     };
 

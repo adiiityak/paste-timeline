@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { ClipboardItem, Collection, AppSettings, ViewTab, ClipboardType } from "../types/clipboard";
+import type { ClipboardItem } from "../types/clipboard";
+import { Collection, AppSettings, ViewTab, ClipboardType } from "../types/clipboard";
 import { detectClipboardType } from "../utils/typeDetector";
 import { checkSensitivity } from "../utils/privacyFilter";
 import {
@@ -306,7 +307,32 @@ export const useClipboardStore = create<ClipboardState>((set, get) => ({
 
   copyItemToClipboard: async (item: ClipboardItem) => {
     try {
-      await navigator.clipboard.writeText(item.content);
+      let copiedAsImage = false;
+
+      // If item is an image data URL, write the actual binary image blob to system clipboard
+      if (item.type === "image" && item.content.startsWith("data:image/")) {
+        try {
+          const res = await fetch(item.content);
+          const blob = await res.blob();
+          const mimeType = blob.type.startsWith("image/") ? blob.type : "image/png";
+
+          if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== "undefined") {
+            await navigator.clipboard.write([
+              new ClipboardItem({
+                [mimeType]: blob,
+              }),
+            ]);
+            copiedAsImage = true;
+          }
+        } catch (imgWriteErr) {
+          console.warn("Clipboard binary image write failed, falling back to data URL text:", imgWriteErr);
+        }
+      }
+
+      if (!copiedAsImage) {
+        await navigator.clipboard.writeText(item.content);
+      }
+
       await incrementItemCopyCount(item.id);
 
       const { items, showToast, settings } = get();
@@ -318,7 +344,7 @@ export const useClipboardStore = create<ClipboardState>((set, get) => ({
         playCopyAudioFeedback();
       }
 
-      showToast("Re-copied to system clipboard!");
+      showToast(copiedAsImage ? "Copied image to clipboard!" : "Re-copied to system clipboard!");
     } catch (err) {
       console.error("Failed to copy to clipboard:", err);
       get().showToast("Copy permission error");
