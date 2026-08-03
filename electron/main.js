@@ -4,6 +4,7 @@ const path = require('path');
 let mainWindow;
 let tray;
 let lastCopiedText = "";
+let lastCopiedImage = "";
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -74,6 +75,7 @@ function createTray() {
 function startClipboardMonitor() {
   setInterval(() => {
     try {
+      // 1. Check native text clipboard
       const text = clipboard.readText();
       if (text && text !== lastCopiedText && text.trim().length > 0) {
         lastCopiedText = text;
@@ -84,11 +86,28 @@ function startClipboardMonitor() {
             type: 'text',
           });
         }
+        return;
+      }
+
+      // 2. Check native image clipboard (screenshots & copied images from Finder/folders)
+      const nativeImg = clipboard.readImage();
+      if (nativeImg && !nativeImg.isEmpty()) {
+        const dataUrl = nativeImg.toDataURL();
+        if (dataUrl && dataUrl !== lastCopiedImage && dataUrl.length > 50) {
+          lastCopiedImage = dataUrl;
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('native-clipboard-item', {
+              content: dataUrl,
+              app: 'macOS Image / Screenshot Clipboard',
+              type: 'image',
+            });
+          }
+        }
       }
     } catch (e) {
       // Ignore reading errors
     }
-  }, 1000);
+  }, 800);
 }
 
 app.whenReady().then(() => {
@@ -105,6 +124,15 @@ app.whenReady().then(() => {
         mainWindow.show();
       }
       mainWindow.webContents.send('trigger-quick-paste');
+    }
+  });
+
+  // Register Global Hotkey Cmd+Shift+S for Screen Snipper
+  globalShortcut.register('CommandOrControl+Shift+S', () => {
+    if (mainWindow) {
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+      mainWindow.webContents.send('trigger-screen-snipper');
     }
   });
 

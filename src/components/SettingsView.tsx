@@ -10,6 +10,8 @@ export const SettingsView: React.FC = () => {
   const [hotkey, setHotkey] = useState(settings.hotkey);
   const [soundEffects, setSoundEffects] = useState(settings.soundEffects);
 
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
   const handleSaveSettings = () => {
     updateSettings({
       historyLimit,
@@ -247,17 +249,34 @@ export const SettingsView: React.FC = () => {
             />
           </label>
 
-          <button
-            onClick={() => {
-              if (confirm("Are you sure you want to clear all clipboard history?")) {
-                clearAllHistory();
-              }
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-rose-100 dark:bg-rose-600/20 hover:bg-rose-200 dark:hover:bg-rose-600/30 text-rose-800 dark:text-rose-300 text-xs font-semibold rounded-md border border-rose-300 dark:border-rose-500/30 transition-all shadow-sm"
-          >
-            <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-            <span>Clear History</span>
-          </button>
+          {showClearConfirm ? (
+            <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/60 p-1 rounded-md border border-rose-300 dark:border-rose-500/50">
+              <span className="text-xs text-rose-700 dark:text-rose-300 font-semibold px-2">Clear all {items.length} items?</span>
+              <button
+                onClick={() => {
+                  clearAllHistory();
+                  setShowClearConfirm(false);
+                }}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded shadow transition-all"
+              >
+                Yes, Clear
+              </button>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="px-2.5 py-1.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold rounded hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-rose-100 dark:bg-rose-600/20 hover:bg-rose-200 dark:hover:bg-rose-600/30 text-rose-800 dark:text-rose-300 text-xs font-semibold rounded-md border border-rose-300 dark:border-rose-500/30 transition-all shadow-sm"
+            >
+              <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <span>Clear History</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

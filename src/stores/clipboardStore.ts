@@ -36,6 +36,7 @@ interface ClipboardState {
   isSimulatorOpen: boolean;
   isQuickPasteOpen: boolean;
   isMacModalOpen: boolean;
+  isSnipperOpen: boolean;
   toastMessage: string | null;
   isMonitoring: boolean;
   lastCopiedText: string;
@@ -72,6 +73,7 @@ interface ClipboardState {
   setIsSimulatorOpen: (open: boolean) => void;
   setIsQuickPasteOpen: (open: boolean) => void;
   setIsMacModalOpen: (open: boolean) => void;
+  setIsSnipperOpen: (open: boolean) => void;
 }
 
 export const useClipboardStore = create<ClipboardState>((set, get) => ({
@@ -89,6 +91,7 @@ export const useClipboardStore = create<ClipboardState>((set, get) => ({
   isSimulatorOpen: false,
   isQuickPasteOpen: false,
   isMacModalOpen: false,
+  isSnipperOpen: false,
   toastMessage: null,
   isMonitoring: true,
   lastCopiedText: "",
@@ -101,9 +104,10 @@ export const useClipboardStore = create<ClipboardState>((set, get) => ({
         getStoredSettings(),
       ]);
 
-      // Seed initial sample items if empty for immediate rich UI testing
+      // Seed initial sample items if empty AND history hasn't been intentionally cleared
       let finalItems = rawItems;
-      if (rawItems.length === 0) {
+      const hasBeenCleared = localStorage.getItem("paste_timeline_cleared_history") === "true";
+      if (rawItems.length === 0 && !hasBeenCleared) {
         finalItems = await seedSampleData();
       }
 
@@ -322,9 +326,15 @@ export const useClipboardStore = create<ClipboardState>((set, get) => ({
   },
 
   clearAllHistory: async () => {
-    await clearAllClipboardItems();
-    set({ items: [], selectedItem: null, selectedItemIds: [] });
-    get().showToast("Clipboard history cleared");
+    try {
+      localStorage.setItem("paste_timeline_cleared_history", "true");
+      await clearAllClipboardItems();
+      set({ items: [], selectedItem: null, selectedItemIds: [] });
+      get().showToast("Clipboard history cleared successfully!");
+    } catch (err) {
+      console.error("Failed to clear clipboard history:", err);
+      get().showToast("Failed to clear history");
+    }
   },
 
   createCollection: async (name: string, color: string, description?: string) => {
@@ -405,6 +415,7 @@ export const useClipboardStore = create<ClipboardState>((set, get) => ({
   setIsSimulatorOpen: (open) => set({ isSimulatorOpen: open }),
   setIsQuickPasteOpen: (open) => set({ isQuickPasteOpen: open }),
   setIsMacModalOpen: (open) => set({ isMacModalOpen: open }),
+  setIsSnipperOpen: (open) => set({ isSnipperOpen: open }),
 }));
 
 function playCopyAudioFeedback() {

@@ -85,11 +85,10 @@ export const CollectionsView: React.FC = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm(`Delete collection "${col.name}"?`)) {
-                        deleteCollection(col.id);
-                      }
+                      deleteCollection(col.id);
                     }}
                     className="p-1 text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    title="Delete Collection"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

@@ -8,4 +8,7 @@ contextBridge.exposeInMainWorld('macNativeAPI', {
   onTriggerQuickPaste: (callback) => {
     ipcRenderer.on('trigger-quick-paste', () => callback());
   },
+  onTriggerScreenSnipper: (callback) => {
+    ipcRenderer.on('trigger-screen-snipper', () => callback());
+  },
 });

@@ -48,12 +48,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   const handleCreateQuickCollection = () => {
-    const name = prompt("Enter new collection name:");
-    if (name && name.trim()) {
-      const colors = ["indigo", "emerald", "amber", "rose", "cyan", "purple"];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      createCollection(name.trim(), color);
-    }
+    setActiveTab("collections");
   };
 
   return (
